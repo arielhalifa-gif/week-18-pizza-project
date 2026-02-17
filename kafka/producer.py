@@ -3,7 +3,7 @@ import uuid
 
 from confluent_kafka import Producer
 
-def send_to_kafka(order):
+def send_to_kafka(data_mongo):
     producer_config = {
         "bootstrap.servers": "localhost:9092"
     }
@@ -23,7 +23,7 @@ def send_to_kafka(order):
     #     "item": "frozen yogurt",
     #     "quantity": 10
     # }
-    value = json.dumps(order).encode("utf-8")
+    value = json.dumps(data_mongo).encode("utf-8")
 
     producer.produce(
         topic="pizza-orders",
