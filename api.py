@@ -6,6 +6,8 @@ from typing import Optional
 import uuid
 from mongo.connection import get_collection
 from kafka.producer import send_to_kafka
+import redis
+
 
 
 class Order(BaseModel):
@@ -47,7 +49,31 @@ def uploading_file(file: UploadFile = File(...)):
 
 @app.get("/order/{order_id}")
 def get_by_id(order_id):
-    pass
+
+# חיבורים (Connections)
+    r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+    collection = get_collection()
+
+    # 1. ניסיון שליפה מ-Redis
+    cached_order = r.get(f"order:{order_id}")
+    
+    if cached_order:
+        print("--- Cache Hit (Redis) ---")
+        return json.loads(cached_order)
+
+    # 2. אם לא נמצא ב-Redis, שליפה מ-MongoDB
+    print("--- Cache Miss (MongoDB) ---")
+    order = collection.find_one({"_id": order_id})
+
+    if order:
+        # 3. עדכון ה-Cache כדי שבפעם הבאה זה יהיה מהיר
+        # מומלץ להוסיף TTL (זמן תפוגה), למשל 3600 שניות
+        r.setex(f"order:{order_id}", 3600, json.dumps(order))
+        return order
+
+    return None # ההזמנה לא קיימת בכלל
+
+
 
 
 
