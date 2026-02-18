@@ -1,4 +1,5 @@
 import json
+from mongo.connection import get_collection
 
 from confluent_kafka import Consumer
 
@@ -25,9 +26,16 @@ try:
 
         value = msg.value().decode("utf-8")
         order = json.loads(value)
-        print(f"📦 Received order: {order['quantity']} x {order['item']} from {order['user']}")
+        # print(f"📦 Received order: {order['quantity']} x {order['item']} from {order['user']}")
 except KeyboardInterrupt:
     print("\n🔴 Stopping consumer")
 
 finally:
     consumer.close()
+
+
+collection = get_collection()
+
+query_filter = { "order_id": order.order_id }
+update_operation = {
+    "$set": { "status": "DELIVERED" }}
